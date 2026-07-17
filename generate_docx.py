@@ -181,6 +181,13 @@ def generate_report():
     add_bullet_item("NVIDIA NIM API Integration: Interfaces with the meta/llama-3.1-8b-instruct chat completion endpoint.")
     add_bullet_item("Locking Logging System: Utilizes threading.Lock() primitives to write logs safely to feedback_log.csv.")
 
+    add_heading_2("2.3 System Pipeline Flowchart")
+    add_body_text(
+        "The diagram below details the end-to-end data lifecycle, from initial UI user selection inputs, through Flask server "
+        "route handler transformations and NVIDIA NIM Llama-3.1 LLM request formatting, to the thread-locked CSV metrics logger:"
+    )
+    add_image_block("flowchart.png", "System Pipeline Flowchart detailing the request-response lifecycle.")
+
     # --- Section 3: App Interfaces & Screenshots ---
     add_heading_1("3. Application Working & Interface Mockups")
     add_body_text("Here are the live screenshots capturing the assistant's workflow and response logs:")
@@ -194,21 +201,74 @@ def generate_report():
     add_image_block("analytics_screen.png", "Analytics Dashboard displaying aggregate satisfaction rates and per-prompt breakdowns.")
 
     # --- Section 4: Source Code Documentation ---
-    add_heading_1("4. Complete Source Code Documentation")
+    add_heading_1("4. Complete Source Code & Implementation Details")
     
+    # 4.1 app.py
     add_heading_2("4.1 Flask Server Routing (app.py)")
+    add_body_text(
+        "File Description:\n"
+        "The app.py file serves as the main application controller. It imports requests to handle HTTPS payloads, csv to log ratings, "
+        "and threading to lock the logger file during multi-user write scenarios. It declares the global PROMPTS, SYSTEM_PROMPTS, "
+        "and labels, and connects user requests with the NVIDIA NIM chat completions model (meta/llama-3.1-8b-instruct) endpoints."
+    )
+    add_body_text("Code Segment:")
     add_code_block("app.py")
+    add_body_text(
+        "Execution Details:\n"
+        "Upon receipt of client POST requests on /generate, the helper function call_nvidia formats the template with user inputs, "
+        "queries Llama-3.1-8b, and returns structured markdown payloads. Thumbs up/down feedback ratings call /feedback, appending "
+        "them safely to the local CSV logger."
+    )
 
+    # 4.2 index.html
     add_heading_2("4.2 Main HTML Workspace (templates/index.html)")
+    add_body_text(
+        "File Description:\n"
+        "The index.html file provides the core workspace layout, styled in a flat light-corporate style using Tailwind CSS. "
+        "It sets up tabs for selecting functions, displays prompt style selectors, includes a character-counted input textarea, "
+        "and provides copying mechanisms and thumbs-up/down ratings for user response cards."
+    )
+    add_body_text("Code Segment:")
     add_code_block("templates/index.html")
+    add_body_text(
+        "Execution Details:\n"
+        "All forms use event.preventDefault() and fetch() calls. When a user changes a tab, selectFunction() updates "
+        "dropdown options and descriptions. Responses are rendered on the page using a lightweight custom markdown parsing helper."
+    )
 
+    # 4.3 feedback_summary.html
     add_heading_2("4.3 Analytics HTML template (templates/feedback_summary.html)")
+    add_body_text(
+        "File Description:\n"
+        "The feedback_summary.html file provides the analytics dashboard layout. It displays cards for total interactions, "
+        "helpful scores, dissatisfaction totals, satisfaction rates, and renders progress bars and per-style breakdown tables."
+    )
+    add_body_text("Code Segment:")
     add_code_block("templates/feedback_summary.html")
+    add_body_text(
+        "Execution Details:\n"
+        "The file utilizes Jinja2 syntax to iterate over the statistics aggregates calculated by the app.py helper get_feedback_stats(). "
+        "It provides a clear overview of prompt helpfulness, letting users refine system prompts based on empirical metrics."
+    )
 
+    # 4.4 requirements.txt
     add_heading_2("4.4 Setup Requirements (requirements.txt)")
+    add_body_text(
+        "File Description:\n"
+        "Declares python libraries necessary to run the web application server locally. Uses flask for routing, "
+        "requests to call the NIM endpoint, and python-dotenv to isolate api keys from source control repositories."
+    )
+    add_body_text("Code Segment:")
     add_code_block("requirements.txt")
 
+    # 4.5 .gitignore
     add_heading_2("4.5 Git Exclusions (.gitignore)")
+    add_body_text(
+        "File Description:\n"
+        "Excludes python cache objects, virtual environments (.venv), user feedback logs, and sensitive credential variables "
+        "(.env) from remote repositories."
+    )
+    add_body_text("Code Segment:")
     add_code_block(".gitignore")
 
     # Save Document

@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+feedback_log.csv
+.venv/
+venv/
+env/

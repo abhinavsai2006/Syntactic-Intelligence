@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Syntactic Intelligence AI Assistant — Accurate Q&A, text summarization, and creative content generation.">
+    <title>AI Assistant — Syntactic Intelligence</title>
+    <!-- Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Geist:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            primary: '#4f46e5', // Indigo
+                            secondary: '#0f172a', // Slate-900
+                            bg: '#f7f9fb', // Light Slate canvas
+                            card: '#ffffff', // Pure white cards
+                            border: '#e2e8f0', // Slate-200
+                            inputBg: '#f8fafc', // Light gray input
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        geist: ['Geist', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f7f9fb;
+            font-family: 'Inter', sans-serif;
+        }
+        .response-body h2, .response-body h3, .response-body h4 {
+            font-family: 'Geist', sans-serif;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 1.25rem 0 0.5rem;
+        }
+        .response-body h2 { font-size: 1.25rem; }
+        .response-body h3 { font-size: 1.1rem; }
+        .response-body h4 { font-size: 1rem; }
+        .response-body p { margin-bottom: 0.75rem; color: #334155; }
+        .response-body ul { padding-left: 1.5rem; margin-bottom: 0.75rem; list-style-type: disc; }
+        .response-body ol { padding-left: 1.5rem; margin-bottom: 0.75rem; list-style-type: decimal; }
+        .response-body li { margin-bottom: 0.35rem; color: #334155; }
+        .response-body code {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #f1f5f9;
+            padding: 0.15em 0.4em;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #4f46e5;
+        }
+        .response-body strong { color: #0f172a; font-weight: 600; }
+        .response-body hr { border: none; border-top: 1px solid #e2e8f0; margin: 1rem 0; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800 antialiased">
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-white sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl text-brand-primary font-bold">✦</span>
+                <span class="font-geist text-xl font-extrabold tracking-tight text-brand-secondary">Syntactic Intelligence</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">Assistant</span>
+            </div>
+            <nav class="flex items-center gap-4">
+                <a href="/feedback-summary" class="text-sm font-semibold text-slate-600 hover:text-brand-primary transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-slate-50 border border-transparent hover:border-slate-200">
+                    📊 Feedback Analytics
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-grow max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+        
+        <!-- Function Tabs Selector -->
+        <section class="bg-white border border-slate-200 rounded-lg p-1.5 flex gap-1 shadow-sm">
+            {% for key, label in functions.items() %}
+            <button
+                class="flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-4 rounded-md font-medium text-sm transition-all duration-200 {% if loop.first %}bg-indigo-50 border border-indigo-100 text-brand-primary{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent{% endif %}"
+                data-function="{{ key }}"
+                onclick="selectFunction('{{ key }}', this)"
+                id="tab-{{ key }}"
+            >
+                <span class="text-base">
+                    {% if key == 'answer_questions' %}💡
+                    {% elif key == 'summarize_text' %}📝
+                    {% else %}✨{% endif %}
+                </span>
+                <span class="font-geist font-semibold">{{ label }}</span>
+            </button>
+            {% endfor %}
+        </section>
+
+        <!-- Config & Workspace Grid -->
+        <div class="grid grid-cols-1 gap-6">
+            <!-- Form Card -->
+            <section class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+                <div class="mb-6">
+                    <h2 class="font-geist text-lg font-bold text-slate-900" id="cardTitle">Answer Questions</h2>
+                    <p class="text-slate-500 text-sm mt-1" id="cardDescription">Get accurate, concise answers to your questions.</p>
+                </div>
+
+                <form id="aiForm" onsubmit="handleSubmit(event)" class="space-y-5">
+                    <!-- Dropdown Style -->
+                    <div>
+                        <label for="promptStyle" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Prompt Style</label>
+                        <select id="promptStyle" class="w-full rounded-md border border-slate-200 bg-brand-inputBg px-3.5 py-2.5 text-sm text-slate-900 focus:border-brand-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer" name="style">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Input Text Area -->
+                    <div>
+                        <label for="userInput" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Your Input</label>
+                        <textarea
+                            id="userInput"
+                            class="w-full rounded-md border border-slate-200 bg-brand-inputBg p-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-mono"
+                            name="input"
+                            rows="6"
+                            placeholder="Type your query, paste text, or describe a creative topic..."
+                            required
+                        ></textarea>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-xs text-slate-400 font-mono" id="charCount">0 characters</span>
+                            <span class="text-xs text-slate-400 font-mono">NVIDIA NIM / Llama-3.1</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Submit -->
+                    <button type="submit" class="w-full bg-brand-primary text-white py-3 px-6 rounded-md font-semibold text-sm hover:bg-indigo-700 active:bg-indigo-800 transition-all duration-150 flex items-center justify-center gap-2 border border-transparent shadow-sm hover:shadow" id="submitBtn">
+                        <span id="btnText">Generate Response</span>
+                        <span id="btnLoader" class="hidden items-center gap-2">
+                            <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                        </span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Error Notification Card (hidden initially) -->
+            <section class="bg-red-50 border border-red-200 rounded-lg p-4 hidden" id="errorCard">
+                <div class="flex gap-3">
+                    <span class="text-red-500 text-lg">⚠️</span>
+                    <p class="text-sm font-semibold text-red-800" id="errorMessage"></p>
+                </div>
+            </section>
+
+            <!-- Response Card (hidden initially) -->
+            <section class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm hidden" id="responseCard">
+                <div class="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-brand-primary font-bold">⚙️</span>
+                        <h3 class="font-geist font-bold text-slate-900">Generated Solution</h3>
+                    </div>
+                    <button class="text-slate-500 hover:text-brand-primary hover:bg-slate-50 border border-slate-200 p-2 rounded-md transition-all" onclick="copyResponse()" title="Copy to clipboard">
+                        <span id="copyIcon">📋</span>
+                    </button>
+                </div>
+                
+                <!-- Response Text rendered dynamically -->
+                <div class="response-body text-sm font-sans" id="responseBody"></div>
+
+                <!-- Feedback Rating -->
+                <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4" id="feedbackSection">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Was this response helpful?</span>
+                    <div class="flex gap-2">
+                        <button class="text-xs font-semibold px-4 py-2 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 transition-all" onclick="sendFeedback('helpful')" id="btnHelpful">
+                            👍 Helpful
+                        </button>
+                        <button class="text-xs font-semibold px-4 py-2 rounded-md border border-slate-200 text-slate-600 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-all" onclick="sendFeedback('not_helpful')" id="btnNotHelpful">
+                            👎 Not Helpful
+                        </button>
+                    </div>
+                    <span class="text-xs font-semibold text-emerald-600 hidden" id="feedbackThanks">
+                        ✓ Logged! Thank you for the feedback.
+                    </span>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-white py-6">
+        <div class="max-w-4xl mx-auto px-4 text-center text-xs text-slate-400 font-medium">
+            &copy; 2026 Syntactic Intelligence &middot; Powered by Llama-3.1 NIM &middot; <a href="/feedback-summary" class="underline hover:text-brand-primary">View Dashboard</a>
+        </div>
+    </footer>
+
+    <script>
+        // ── State ──────────────────────────────────────────────────────
+        const styleLabels = {{ styles | tojson }};
+        const functionLabels = {{ functions | tojson }};
+        let currentFunction = Object.keys(functionLabels)[0];
+        let currentResponse = '';
+
+        const descriptions = {
+            answer_questions: 'Get accurate, concise answers to your questions.',
+            summarize_text: 'Paste any text or article and get a clean summary.',
+            generate_creative: 'Create stories, poems, or brainstorm ideas on any topic.',
+        };
+
+        // ── Function Selector ──────────────────────────────────────────
+        function selectFunction(fn, btn) {
+            currentFunction = fn;
+
+            // Update active tab styles
+            document.querySelectorAll('[data-function]').forEach(b => {
+                b.classList.remove('bg-indigo-50', 'border-indigo-100', 'text-brand-primary');
+                b.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-50', 'border-transparent');
+            });
+            btn.classList.add('bg-indigo-50', 'border-indigo-100', 'text-brand-primary');
+            btn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-50', 'border-transparent');
+
+            // Update header details
+            document.getElementById('cardTitle').textContent = functionLabels[fn];
+            document.getElementById('cardDescription').textContent = descriptions[fn];
+
+            // Update style options
+            populateStyles(fn);
+
+            // Close output
+            document.getElementById('responseCard').classList.add('hidden');
+            document.getElementById('errorCard').classList.add('hidden');
+        }
+
+        function populateStyles(fn) {
+            const select = document.getElementById('promptStyle');
+            select.innerHTML = '';
+            const styles = styleLabels[fn];
+            for (const [key, label] of Object.entries(styles)) {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = label;
+                select.appendChild(opt);
+            }
+        }
+
+        // ── Submit Handling ────────────────────────────────────────────
+        async function handleSubmit(e) {
+            e.preventDefault();
+
+            const input = document.getElementById('userInput').value.trim();
+            if (!input) return;
+
+            const style = document.getElementById('promptStyle').value;
+
+            // Loading state UI
+            const btnText = document.getElementById('btnText');
+            const btnLoader = document.getElementById('btnLoader');
+            const submitBtn = document.getElementById('submitBtn');
+
+            btnText.classList.add('hidden');
+            btnLoader.classList.remove('hidden');
+            btnLoader.classList.add('flex');
+            submitBtn.disabled = true;
+
+            document.getElementById('responseCard').classList.add('hidden');
+            document.getElementById('errorCard').classList.add('hidden');
+
+            try {
+                const res = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        function: currentFunction,
+                        style: style,
+                        input: input,
+                    }),
+                });
+
+                const data = await res.json();
+
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    currentResponse = data.response;
+                    showResponse(data.response);
+                }
+            } catch (err) {
+                showError('Network connectivity error. Please check your local server or configuration.');
+            } finally {
+                btnText.classList.remove('hidden');
+                btnLoader.classList.add('hidden');
+                btnLoader.classList.remove('flex');
+                submitBtn.disabled = false;
+            }
+        }
+
+        // ── Rendering ──────────────────────────────────────────────────
+        function showResponse(text) {
+            const card = document.getElementById('responseCard');
+            const body = document.getElementById('responseBody');
+
+            body.innerHTML = renderMarkdown(text);
+
+            // Reset feedback actions
+            document.getElementById('btnHelpful').classList.remove('hidden');
+            document.getElementById('btnNotHelpful').classList.remove('hidden');
+            document.getElementById('btnHelpful').disabled = false;
+            document.getElementById('btnNotHelpful').disabled = false;
+            document.getElementById('feedbackThanks').classList.add('hidden');
+
+            card.classList.remove('hidden');
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function showError(msg) {
+            const card = document.getElementById('errorCard');
+            document.getElementById('errorMessage').textContent = msg;
+            card.classList.remove('hidden');
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ── Markdown Parser ────────────────────────────────────────────
+        function renderMarkdown(text) {
+            let html = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                // Bold & italic markdown
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                // Headers
+                .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+                .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^---$/gm, '<hr>')
+                // Lists
+                .replace(/^[\-\*] (.+)$/gm, '<li>$1</li>')
+                .replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+            html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+            html = html
+                .split(/\n\n+/)
+                .map(block => {
+                    block = block.trim();
+                    if (!block) return '';
+                    if (block.startsWith('<h') || block.startsWith('<ul') || block.startsWith('<hr')) return block;
+                    return `<p>${block.replace(/\n/g, '<br>')}</p>`;
+                })
+                .join('');
+
+            return html;
+        }
+
+        // ── Actions ────────────────────────────────────────────────────
+        function copyResponse() {
+            navigator.clipboard.writeText(currentResponse).then(() => {
+                const icon = document.getElementById('copyIcon');
+                icon.textContent = '✅';
+                setTimeout(() => { icon.textContent = '📋'; }, 1500);
+            });
+        }
+
+        async function sendFeedback(type) {
+            const input = document.getElementById('userInput').value.trim();
+            const style = document.getElementById('promptStyle').value;
+
+            try {
+                await fetch('/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        function: currentFunction,
+                        style: style,
+                        input: input,
+                        response: currentResponse,
+                        feedback: type,
+                    }),
+                });
+            } catch (err) {}
+
+            document.getElementById('btnHelpful').classList.add('hidden');
+            document.getElementById('btnNotHelpful').classList.add('hidden');
+            document.getElementById('feedbackThanks').classList.remove('hidden');
+        }
+
+        // Character count trigger
+        document.getElementById('userInput').addEventListener('input', function () {
+            document.getElementById('charCount').textContent = this.value.length + ' characters';
+        });
+
+        // Init
+        populateStyles(currentFunction);
+    </script>
+</body>
+</html>

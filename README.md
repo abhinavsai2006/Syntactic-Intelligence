@@ -1,4 +1,4 @@
-# AI Assistant — Flask + Claude Sonnet
+# AI Assistant
 
 A web-based AI assistant powered by **Anthropic Claude Sonnet** with three distinct AI functions, multiple prompt styles, and a built-in feedback system.
 
